@@ -17,7 +17,7 @@ def transfer():
         auth.verify_token(token)
         return jsonify({"status": "success"})
     except ValueError as e:
-        return jsonify({"error": f"Token inválido o expirado: {str(e)}"}), 403
+        return jsonify({"error": f"Token invalido o expirado: {str(e)}"}), 403
     except Exception as e:
         return jsonify({"error": f"Error interno al verificar el token: {str(e)}"}), 500
 
