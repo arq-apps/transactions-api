@@ -70,6 +70,42 @@ def transfer():
         "monto": monto
     })
 
+@app.route('/transfer-no-auth', methods=['POST'])
+def transfer_no_auth():
+    # Paso 1: Leer el body (sin verificar token entrante)
+    body = request.get_json()
+    monto = body.get("amount", 0)
+
+    # Paso 2: Hacer request a accounts SIN token
+    accounts_api_url = os.getenv("ACCOUNTS_API_URL", "http://localhost:5001")
+    try:
+        accounts_response = requests.get(
+            f"{accounts_api_url}/balance"
+            # 👇 Sin headers, ni Authorization, ni X-Token-Issuer
+        )
+
+        if accounts_response.status_code != 200:
+            return jsonify({
+                "error": "No se pudo obtener el balance de cuentas",
+                "status_code_accounts_api": accounts_response.status_code,
+                "response_accounts_api": accounts_response.json()
+            }), 502
+
+        data = accounts_response.json()
+        balance = data["balance"]["available"]
+
+        if monto > balance:
+            return jsonify({"error": "Fondos insuficientes"}), 400
+
+    except Exception as e:
+        return jsonify({"error": f"Error al consultar el balance: {str(e)}"}), 500
+
+    return jsonify({
+        "status": "success",
+        "message": "Transferencia realizada (sin autenticación)",
+        "monto": monto
+    })
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
