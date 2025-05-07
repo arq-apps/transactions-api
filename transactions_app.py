@@ -16,9 +16,14 @@ def transfer():
         }), 401
 
     token = auth_header.replace('Bearer ', '')
+    issuer = request.headers.get('X-Token-Issuer')
+    if not issuer:
+        return jsonify({
+            "error": "Falta el header X-Token-Issuer para determinar quién firmó el token"
+        }), 400
 
     try:
-        auth.verify_token(token)
+        auth.verify_token(token, issuer_app_name=issuer)
     except ValueError as e:
         return jsonify({"error": f"Token inválido o expirado: {str(e)}"}), 403
     except Exception as e:
@@ -36,11 +41,18 @@ def transfer():
     try:
         accounts_response = requests.get(
             f"{accounts_api_url}/balance",
-            headers={"Authorization": f"Bearer {internal_token}"}
+            headers={
+                "Authorization": f"Bearer {internal_token}",
+                "X-Token-Issuer": "transactions"  
+            }
         )
 
         if accounts_response.status_code != 200:
-            return jsonify({"error": "No se pudo obtener el balance de cuentas", "status_code_accounts_api": accounts_response.status_code, "response_accounts_api": accounts_response.json()}), 502
+            return jsonify({
+                "error": "No se pudo obtener el balance de cuentas",
+                "status_code_accounts_api": accounts_response.status_code,
+                "response_accounts_api": accounts_response.json()
+            }), 500
 
         data = accounts_response.json()
         balance = data["balance"]["available"]
