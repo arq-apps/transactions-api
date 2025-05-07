@@ -10,22 +10,27 @@ auth = BankAuth("transactions")
 def transfer():
     # Paso 1: Verificar token entrante
     auth_header = request.headers.get('Authorization', '')
+    if not auth_header:
+        return jsonify({
+        "error": "Token faltante en el header Authorization. Se espera 'Bearer <token>'"
+    }), 401
+
     if not auth_header.startswith('Bearer '):
         return jsonify({
-            "error": "Token faltante o malformado en el header Authorization. Se espera 'Bearer <token>'"
-        }), 401
+        "error": "Token malformado en el header Authorization. Se espera el formato 'Bearer <token>'"
+    }), 401
 
     token = auth_header.replace('Bearer ', '')
     issuer = request.headers.get('X-Token-Issuer')
     if not issuer:
         return jsonify({
-            "error": "Falta el header X-Token-Issuer para determinar quién firmó el token"
-        }), 400
+            "error": "Falta el header X-Token-Issuer para determinar quién firmo el token"
+        }), 401
 
     try:
         auth.verify_token(token, issuer_app_name=issuer)
     except ValueError as e:
-        return jsonify({"error": f"Token inválido o expirado: {str(e)}"}), 403
+        return jsonify({"error": f"Token invalido o expirado: {str(e)}"}), 403
     except Exception as e:
         return jsonify({"error": f"Error interno al verificar el token: {str(e)}"}), 500
 
