@@ -2,24 +2,9 @@ import os
 import requests
 from flask import Flask, request, jsonify
 from bank_auth_sdk import BankAuth
-from werkzeug.serving import WSGIRequestHandler
-import logging
 
 app = Flask(__name__)
 auth = BankAuth("transactions")
-
-# =============================================
-# Configuración personalizada para ocultar IPs en los logs
-# =============================================
-class NoIPRequestHandler(WSGIRequestHandler):
-    def log_request(self, code='-', size='-'):
-        # Reemplaza toda IP por "[IP OCULTADA]"
-        self.log("info", f'[IP OCULTADA] "{self.requestline}" {code} {size}')
-
-# Opcional: Desactivar logs de Werkzeug (comenta si quieres ver logs sin IP)
-# log = logging.getLogger('werkzeug')
-# log.setLevel(logging.ERROR)
-# =============================================
 
 @app.route('/transfer', methods=['POST'])
 def transfer():
@@ -27,13 +12,13 @@ def transfer():
     auth_header = request.headers.get('Authorization', '')
     if not auth_header:
         return jsonify({
-            "error": "Token faltante en el header Authorization. Se espera 'Bearer <token>'"
-        }), 401
+        "error": "Token faltante en el header Authorization. Se espera 'Bearer <token>'"
+    }), 401
 
     if not auth_header.startswith('Bearer '):
         return jsonify({
-            "error": "Token malformado en el header Authorization. Se espera el formato 'Bearer <token>'"
-        }), 401
+        "error": "Token malformado en el header Authorization. Se espera el formato 'Bearer <token>'"
+    }), 401
 
     token = auth_header.replace('Bearer ', '')
     issuer = request.headers.get('X-Token-Issuer')
@@ -126,10 +111,6 @@ def transfer_no_auth():
         "monto": monto
     })
 
+
 if __name__ == '__main__':
-    # 👇 Usa el request handler personalizado
-    app.run(
-        host='0.0.0.0',
-        port=5000,
-        request_handler=NoIPRequestHandler  # 🎯 Oculta IPs en logs
-    )
+    app.run(host='0.0.0.0', port=5000)
